@@ -1,5 +1,12 @@
 # Read This Later Changelog
 
+## [Folders, read history, notes and offline status] - {PR_MERGE_DATE}
+
+- Filter the list by Unread, Read, or All — previously only unread links were reachable
+- Group links into the folders assigned by your Read Later account, with unsorted links last
+- Show a note indicator on links that have one, and whether an offline copy is available
+- Mark a link as unread again, and delete links across all your devices
+
 ## [Initial Version] - 2026-07-15
 
 - Show Unread Links: browse your unread saved articles, open and mark them read, copy URLs
