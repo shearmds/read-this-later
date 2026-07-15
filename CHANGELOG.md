@@ -7,6 +7,8 @@
 - Show a note indicator on links that have one, and whether an offline copy is available
 - Mark a link as unread again, and delete links across all your devices
 - Read the captured article text right inside Raycast (⌘↵) on links that have a saved copy
+- Press ⌘↵ on any link to see its note, folder and details, even without a captured copy
+- Save Current Tab now captures the article for offline reading, when the Raycast browser extension is connected
 
 ## [Initial Version] - 2026-07-15
 

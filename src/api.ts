@@ -84,7 +84,12 @@ export async function getItems(): Promise<ReadLaterItem[]> {
   return items.filter((i) => !i.deleted);
 }
 
-export async function saveItem(url: string, title: string): Promise<void> {
+// Returns the item as created, so a caller can follow up on it (e.g. attach a
+// captured body) without re-reading the whole list.
+export async function saveItem(
+  url: string,
+  title: string,
+): Promise<ReadLaterItem> {
   const items = await getItems();
   if (items.some((i) => i.url === url)) {
     throw new Error("Already saved.");
@@ -99,6 +104,17 @@ export async function saveItem(url: string, title: string): Promise<void> {
     deleted: false,
   };
   await sync([newItem]);
+  return newItem;
+}
+
+// Records what happened to a body capture. Kept separate from saveItem so the
+// link is stored the instant we have it — capture is slower and may fail, and
+// must never hold up or undo the save.
+export async function setOffline(
+  item: ReadLaterItem,
+  offline: OfflineStatus,
+): Promise<void> {
+  await sync([revise(item, { offline })]);
 }
 
 // The caller already holds the full item (from the list), so we can update it

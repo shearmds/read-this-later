@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import TurndownService from "turndown";
 import { tables } from "turndown-plugin-gfm";
 import { fetchArticle, OfflineArticle } from "./offline";
-import { ReadLaterItem, hostname } from "./api";
+import { ReadLaterItem, hostname, relativeDate } from "./api";
 
 // Raycast renders Markdown, not HTML, so the envelope's sanitized HTML has to
 // be converted. The body was captured from a live logged-in page, so this is
@@ -23,31 +23,50 @@ turndown.use(tables);
 // their text (or leave markup) inline in the article.
 turndown.remove(["script", "style", "noscript", "iframe", "form", "button"]);
 
-function toMarkdown(article: OfflineArticle): string {
+function articleMarkdown(article: OfflineArticle): string {
   const body = turndown.turndown(article.html || "");
   const heading = article.title ? `# ${article.title}\n\n` : "";
   return heading + body;
 }
 
+// Shown when there's no captured body to read. The note is the point here —
+// it's otherwise only reachable as a hover tooltip in the list.
+function detailsMarkdown(item: ReadLaterItem): string {
+  const parts = [`# ${item.title}`, ""];
+
+  if (item.notes) {
+    parts.push("## Note", "", item.notes, "");
+  }
+
+  parts.push(
+    item.offline === "unavailable"
+      ? "_No article text was captured for this link — the page was paywalled or unreadable when it was saved._"
+      : "_No article text was captured for this link. Save it from the browser extension or your iPhone to read it here._",
+  );
+
+  return parts.join("\n");
+}
+
 export function Reader({ item }: { item: ReadLaterItem }) {
   const [article, setArticle] = useState<OfflineArticle | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Only items with a captured body are worth a network round-trip; for the
+  // rest we already hold everything we can show.
+  const hasBody = item.offline === "saved";
+  const [isLoading, setIsLoading] = useState(hasBody);
   const [error, setError] = useState<string | null>(null);
-  const [missing, setMissing] = useState(false);
 
   useEffect(() => {
+    if (!hasBody) return;
     (async () => {
       try {
-        const fetched = await fetchArticle(item.url);
-        if (fetched) setArticle(fetched);
-        else setMissing(true);
+        setArticle(await fetchArticle(item.url));
       } catch (e) {
         setError(e instanceof Error ? e.message : "Unknown error");
       } finally {
         setIsLoading(false);
       }
     })();
-  }, [item.url]);
+  }, [item.url, hasBody]);
 
   const actions = (
     <ActionPanel>
@@ -57,86 +76,82 @@ export function Reader({ item }: { item: ReadLaterItem }) {
         content={item.url}
         shortcut={{ modifiers: ["cmd"], key: "c" }}
       />
+      {item.notes ? (
+        <Action.CopyToClipboard
+          title="Copy Note"
+          content={item.notes}
+          shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
+        />
+      ) : null}
     </ActionPanel>
   );
 
-  if (error) {
-    return (
-      <Detail
-        markdown={`# Couldn't open the article\n\n${error}`}
-        actions={actions}
-      />
-    );
-  }
-
-  if (missing) {
-    return (
-      <Detail
-        markdown={[
-          "# No captured copy",
-          "",
-          "This link has no saved article body. It was probably saved before",
-          "offline capture existed, or the page was paywalled when it was saved.",
-          "",
-          "Captures happen in the browser extension or the iOS app at save time —",
-          "Raycast can't create one.",
-        ].join("\n")}
-        actions={actions}
-      />
-    );
-  }
+  // A body was advertised but wouldn't load — say so rather than silently
+  // falling back to the "nothing captured" copy, which would be a lie.
+  const markdown = error
+    ? `# Couldn't load the article\n\n${error}`
+    : article
+      ? articleMarkdown(article)
+      : hasBody
+        ? ""
+        : detailsMarkdown(item);
 
   return (
     <Detail
       isLoading={isLoading}
       navigationTitle={item.title}
-      markdown={article ? toMarkdown(article) : ""}
+      markdown={markdown}
       metadata={
-        article ? (
-          <Detail.Metadata>
+        <Detail.Metadata>
+          <Detail.Metadata.Label
+            title="Site"
+            text={article?.siteName || hostname(item.url)}
+          />
+          <Detail.Metadata.Label
+            title="Saved"
+            text={relativeDate(item.savedAt)}
+          />
+          {article?.length ? (
             <Detail.Metadata.Label
-              title="Site"
-              text={article.siteName || hostname(item.url)}
+              title="Length"
+              text={`${Math.max(1, Math.round(article.length / 1000))}k characters`}
             />
-            {article.length ? (
-              <Detail.Metadata.Label
-                title="Length"
-                text={`${Math.max(1, Math.round(article.length / 1000))}k characters`}
-              />
-            ) : null}
-            {article.capturedAt ? (
-              <Detail.Metadata.Label
-                title="Captured"
-                text={new Date(article.capturedAt).toLocaleDateString()}
-              />
-            ) : null}
-            <Detail.Metadata.TagList title="Status">
+          ) : null}
+          {article?.capturedAt ? (
+            <Detail.Metadata.Label
+              title="Captured"
+              text={new Date(article.capturedAt).toLocaleDateString()}
+            />
+          ) : null}
+          <Detail.Metadata.TagList title="Status">
+            <Detail.Metadata.TagList.Item
+              text={item.read ? "Read" : "Unread"}
+              color={item.read ? Color.SecondaryText : Color.Blue}
+            />
+            {item.folder ? (
               <Detail.Metadata.TagList.Item
-                text={item.read ? "Read" : "Unread"}
-                color={item.read ? Color.SecondaryText : Color.Blue}
+                text={item.folder}
+                color={Color.Green}
               />
-              {item.folder ? (
-                <Detail.Metadata.TagList.Item
-                  text={item.folder}
-                  color={Color.Green}
-                />
-              ) : null}
-            </Detail.Metadata.TagList>
-            {item.notes ? (
+            ) : null}
+          </Detail.Metadata.TagList>
+          {item.notes ? (
+            <>
+              <Detail.Metadata.Separator />
               <Detail.Metadata.Label
                 title="Note"
                 icon={Icon.Pencil}
                 text={item.notes}
               />
-            ) : null}
-            <Detail.Metadata.Separator />
-            <Detail.Metadata.Link
-              title="Original"
-              target={item.url}
-              text={hostname(item.url)}
-            />
-          </Detail.Metadata>
-        ) : null
+            </>
+          ) : null}
+          <Detail.Metadata.Separator />
+          <Detail.Metadata.Link
+            title="Original"
+            target={item.url}
+            text={hostname(item.url)}
+          />
+        </Detail.Metadata>
       }
       actions={actions}
     />

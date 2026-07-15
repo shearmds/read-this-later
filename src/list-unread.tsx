@@ -173,14 +173,12 @@ export default function Command() {
                 if (!item.read) toggleRead(item, true);
               }}
             />
-            {item.offline === "saved" && (
-              <Action.Push
-                title="Read Article"
-                icon={Icon.Book}
-                shortcut={{ modifiers: ["cmd"], key: "return" }}
-                target={<Reader item={item} />}
-              />
-            )}
+            <Action.Push
+              title={item.offline === "saved" ? "Read Article" : "Show Details"}
+              icon={item.offline === "saved" ? Icon.Book : Icon.Sidebar}
+              shortcut={{ modifiers: ["cmd"], key: "return" }}
+              target={<Reader item={item} />}
+            />
             {item.read ? (
               <Action
                 title="Mark as Unread"

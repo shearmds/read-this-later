@@ -36,13 +36,17 @@
     }
   ],
   "dependencies": {
+    "@mozilla/readability": "^0.5.0",
     "@raycast/api": "^1.83.0",
     "@raycast/utils": "^1.17.0",
+    "dompurify": "^3.4.12",
+    "jsdom": "^25.0.1",
     "turndown": "^7.2.4",
     "turndown-plugin-gfm": "^1.0.2"
   },
   "devDependencies": {
     "@raycast/eslint-config": "^1.0.11",
+    "@types/jsdom": "^28.0.3",
     "@types/node": "^20.0.0",
     "@types/react": "^18.3.3",
     "@types/turndown": "^5.0.6",
