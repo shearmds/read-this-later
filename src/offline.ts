@@ -102,7 +102,7 @@ export async function fetchArticle(
       },
     );
   } catch {
-    throw new Error("Couldn't reach the Read Later sync service.");
+    throw new Error("Couldn't reach the Research Sync service.");
   } finally {
     clearTimeout(timeout);
   }

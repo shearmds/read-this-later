@@ -113,7 +113,7 @@ export default function Command() {
   async function remove(item: ReadLaterItem) {
     const confirmed = await confirmAlert({
       title: "Delete this link?",
-      message: `"${item.title}" will be removed from Read This Later on all your devices.`,
+      message: `"${item.title}" will be removed from Research Sync on all your devices.`,
       icon: Icon.Trash,
       primaryAction: { title: "Delete", style: Alert.ActionStyle.Destructive },
     });
@@ -138,7 +138,7 @@ export default function Command() {
       <List>
         <List.EmptyView
           icon={Icon.WifiDisabled}
-          title="Couldn't reach Read This Later"
+          title="Couldn't reach Research Sync"
           description={error}
           actions={
             <ActionPanel>

@@ -1,9 +1,10 @@
-# Read This Later Changelog
+# Research Sync Changelog
 
-## [Folders, read history, notes and offline status] - {PR_MERGE_DATE}
+## [Research Sync rename, folders, reading and capture] - {PR_MERGE_DATE}
 
+- Renamed to Research Sync, matching the browser extension and iOS app, with the app's icon
 - Filter the list by Unread, Read, or All — previously only unread links were reachable
-- Group links into the folders assigned by your Read Later account, with unsorted links last
+- Group links into the folders assigned by your Research Sync account, with unsorted links last
 - Show a note indicator on links that have one, and whether an offline copy is available
 - Mark a link as unread again, and delete links across all your devices
 - Read the captured article text right inside Raycast (⌘↵) on links that have a saved copy

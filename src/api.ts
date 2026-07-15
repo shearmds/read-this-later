@@ -1,4 +1,4 @@
-// Thin wrapper around the Read Later sync backend (Cloudflare Worker).
+// Thin wrapper around the Research Sync backend (Cloudflare Worker).
 // The Worker exposes a single POST /sync endpoint that merges the posted
 // items (last-write-wins by url) and returns the full item set. Posting an
 // empty array is therefore a safe read — it can't overwrite anything.
@@ -8,7 +8,7 @@ import { getPreferenceValues } from "@raycast/api";
 const BASE_URL = "https://readlater-sync.shearm.workers.dev";
 const REQUEST_TIMEOUT_MS = 10000;
 const OFFLINE_MESSAGE =
-  "Couldn't reach the Read Later sync service. Check your connection.";
+  "Couldn't reach the Research Sync service. Check your connection.";
 const AUTH_MESSAGE =
   "Sync token rejected. Set or update it in this extension's settings (⌘,).";
 
