@@ -13,7 +13,7 @@
   "commands": [
     {
       "name": "list-unread",
-      "title": "Show Unread Links",
+      "title": "Show Saved Links",
       "subtitle": "Research Sync",
       "description": "Browse your saved articles, read them, and open them in your browser",
       "mode": "view"
