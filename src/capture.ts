@@ -11,7 +11,7 @@
 
 import { BrowserExtension, getPreferenceValues } from "@raycast/api";
 import { randomBytes, createCipheriv } from "node:crypto";
-import { JSDOM } from "jsdom";
+import { parseHTML } from "linkedom";
 import { Readability } from "@mozilla/readability";
 import createDOMPurify, { WindowLike } from "dompurify";
 import { deriveKey, OfflineArticle } from "./offline";
@@ -34,19 +34,27 @@ export interface Extracted {
   siteName: string;
 }
 
+// linkedom rather than jsdom: jsdom resolves ./xhr-sync-worker.js at module
+// load, which esbuild cannot bundle — the extension builds fine and then dies
+// at runtime with "Cannot find module './xhr-sync-worker.js'". We only ever
+// parse a static HTML string, so none of jsdom's networking is wanted anyway.
+//
 // `pageUrl` is load-bearing: Readability resolves relative hrefs and image
-// srcs against it. The browser extension gets this for free by running inside
-// the page; parsing detached HTML here does not, so without a base URL every
-// relative image would break on whichever device later reads the copy.
+// srcs against the document's baseURI. The browser extension gets that for
+// free by running inside the page; parsing detached HTML here does not, so
+// without it every relative image breaks on whichever device reads the copy.
 export function extract(html: string, pageUrl: string): Extracted | null {
-  const dom = new JSDOM(html, { url: pageUrl });
+  const { window, document } = parseHTML(html);
+  // linkedom has no constructor option for this, unlike jsdom's { url }.
+  Object.defineProperty(document, "baseURI", { value: pageUrl });
+
   // Readability rarely returns null — handed a page with no article it still
   // hands back a tiny result (e.g. just the nav text). Treat this as a guard
   // against outright parse failure; isStub() is what actually rejects junk.
-  const article = new Readability(dom.window.document).parse();
+  const article = new Readability(document as never).parse();
   if (!article?.content) return null;
 
-  const purify = createDOMPurify(dom.window as unknown as WindowLike);
+  const purify = createDOMPurify(window as unknown as WindowLike);
   const clean = purify.sanitize(article.content, {
     USE_PROFILES: { html: true },
   });
