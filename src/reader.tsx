@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import TurndownService from "turndown";
 import { tables } from "turndown-plugin-gfm";
 import { fetchArticle, OfflineArticle } from "./offline";
+import { stripBoilerplateMarkdown } from "./boilerplate";
 import { ReadLaterItem, hostname, relativeDate } from "./api";
 
 // Raycast renders Markdown, not HTML, so the envelope's sanitized HTML has to
@@ -24,7 +25,9 @@ turndown.use(tables);
 turndown.remove(["script", "style", "noscript", "iframe", "form", "button"]);
 
 function articleMarkdown(article: OfflineArticle): string {
-  const body = turndown.turndown(article.html || "");
+  // Strip at read time, not just at capture: bodies captured by the browser
+  // extension or iOS already contain the ad text and can't be re-captured here.
+  const body = stripBoilerplateMarkdown(turndown.turndown(article.html || ""));
   const heading = article.title ? `# ${article.title}\n\n` : "";
   return heading + body;
 }

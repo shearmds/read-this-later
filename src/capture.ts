@@ -15,6 +15,7 @@ import { parseHTML } from "linkedom";
 import { Readability } from "@mozilla/readability";
 import createDOMPurify, { WindowLike } from "dompurify";
 import { deriveKey, OfflineArticle } from "./offline";
+import { isBoilerplate } from "./boilerplate";
 import { OfflineStatus } from "./api";
 
 const BASE_URL = "https://readlater-sync.shearm.workers.dev";
@@ -61,7 +62,7 @@ export function extract(html: string, pageUrl: string): Extracted | null {
 
   return {
     title: article.title || "",
-    html: clean,
+    html: stripBoilerplateHtml(clean),
     length: article.length || (article.textContent || "").length,
     excerpt: article.excerpt || "",
     siteName: article.siteName || "",
@@ -70,6 +71,30 @@ export function extract(html: string, pageUrl: string): Extracted | null {
 
 export function isStub(extracted: Extracted): boolean {
   return extracted.length < MIN_LENGTH;
+}
+
+// Drops the publisher furniture Readability keeps — ad slots, "SKIP
+// ADVERTISEMENT", section markers. Done here as well as at read time so the
+// stored body is clean for the iOS and browser readers too, not just this one.
+//
+// Only elements whose ENTIRE text is boilerplate are removed, so a paragraph
+// that happens to discuss advertising survives. Deepest-first, so an ad slot
+// wrapping both "Advertisement" and "SKIP ADVERTISEMENT" has its leaves removed
+// even though the wrapper's combined text matches nothing.
+export function stripBoilerplateHtml(html: string): string {
+  // Must be a complete document: given a bare fragment linkedom silently hands
+  // back an empty body rather than erroring, and everything vanishes.
+  const { document } = parseHTML(
+    `<!DOCTYPE html><html><body>${html}</body></html>`,
+  );
+  // Array.from, not spread: linkedom's NodeList isn't typed as iterable.
+  const elements = Array.from(document.querySelectorAll("body *")).reverse();
+
+  for (const el of elements) {
+    if (isBoilerplate(el.textContent ?? "")) el.remove();
+  }
+
+  return document.body.innerHTML;
 }
 
 export function buildEnvelope(url: string, e: Extracted): OfflineArticle {

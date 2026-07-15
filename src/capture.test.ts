@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { extract, isStub, buildEnvelope, encryptBody } from "./capture";
+import {
+  extract,
+  isStub,
+  buildEnvelope,
+  encryptBody,
+  stripBoilerplateHtml,
+} from "./capture";
 import { decryptBody, parseEnvelope } from "./offline";
 
 const TOKEN = "0123456789abcdef".repeat(4);
@@ -55,6 +61,34 @@ describe("extract", () => {
     expect(e).not.toBeNull();
     expect(e!.length).toBeLessThan(50);
     expect(isStub(e!)).toBe(true);
+  });
+});
+
+describe("stripBoilerplateHtml", () => {
+  // NYT's real shape: an ad wrapper holding two boilerplate leaves.
+  it("removes an NYT ad slot and its skip link", () => {
+    const out = stripBoilerplateHtml(
+      `<div class="ad"><span>Advertisement</span><a href="#after">SKIP ADVERTISEMENT</a></div><p>Real text.</p>`,
+    );
+    expect(out).not.toMatch(/Advertisement/i);
+    expect(out).toContain("Real text.");
+  });
+
+  it("keeps a paragraph that merely mentions advertising", () => {
+    const html = `<p>Advertisement revenue fell 12% last quarter.</p>`;
+    expect(stripBoilerplateHtml(html)).toContain("Advertisement revenue fell");
+  });
+
+  it("does not strip an image or link out of real prose", () => {
+    const html = `<p>Text <a href="https://e.com/x">link</a>.</p><img src="https://e.com/i.jpg" alt="x">`;
+    const out = stripBoilerplateHtml(html);
+    expect(out).toContain('href="https://e.com/x"');
+    expect(out).toContain('src="https://e.com/i.jpg"');
+  });
+
+  it("leaves a clean article byte-identical", () => {
+    const html = `<h2>Section</h2><p>Body.</p>`;
+    expect(stripBoilerplateHtml(html)).toBe(html);
   });
 });
 

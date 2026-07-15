@@ -10,6 +10,7 @@
 - Read the captured article text right inside Raycast (⌘↵) on links that have a saved copy
 - Press ⌘↵ on any link to see its note, folder and details, even without a captured copy
 - Save Current Tab now captures the article for offline reading, when the Raycast browser extension is connected
+- Strip "Advertisement" and "Skip Advertisement" boilerplate out of captured articles
 
 ## [Initial Version] - 2026-07-15
 
