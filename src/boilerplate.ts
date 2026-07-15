@@ -22,8 +22,30 @@ const BOILERPLATE = new Set([
   "sponsored content",
 ]);
 
+// The embedded audio player NYT puts above some articles. Readability keeps its
+// label, its duration and its loading message as ordinary text, so a captured
+// story reads "Listen · 10:07 min" before the first paragraph.
+//
+// Every pattern is anchored to the whole line and length-bounded, because these
+// are far more collidable with real prose than "SKIP ADVERTISEMENT" is — an
+// article could legitimately contain the word "Listen".
+const BOILERPLATE_PATTERNS: RegExp[] = [
+  // The player's label, alone on its line. A one-word line of prose is
+  // vanishingly rare; a heading would still be "## Listen" and is unwrapped
+  // by the caller before it gets here.
+  /^listen$/,
+  // Its duration: "· 10:07 min", "10:07 min", "1:02:33 min".
+  /^[·•]?\s*\d{1,2}(:\d{2}){1,2}\s*min(ute)?s?$/,
+  // Its placeholder while loading. NOTE: this line was clipped in the
+  // screenshot that prompted this, so the exact wording is inferred — the
+  // bound keeps a real sentence about audio from being eaten.
+  /^.{0,40}\baudio\b.{0,40}\bwill load\b\.?$/,
+];
+
 export function isBoilerplate(text: string): boolean {
-  return BOILERPLATE.has(text.trim().toLowerCase().replace(/\s+/g, " "));
+  const normalised = text.trim().toLowerCase().replace(/\s+/g, " ");
+  if (BOILERPLATE.has(normalised)) return true;
+  return BOILERPLATE_PATTERNS.some((re) => re.test(normalised));
 }
 
 // Strips boilerplate lines from converted Markdown. Applied at read time so it

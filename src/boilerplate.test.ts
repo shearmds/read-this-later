@@ -27,6 +27,31 @@ describe("isBoilerplate", () => {
   it("normalises collapsed whitespace and newlines", () => {
     expect(isBoilerplate("SKIP\n  ADVERTISEMENT")).toBe(true);
   });
+
+  // NYT's embedded audio player, seen verbatim in a captured article.
+  it.each([
+    "Listen",
+    "listen",
+    "· 10:07 min",
+    "10:07 min",
+    "· 1:02:33 min",
+    "· 5:00 minutes",
+    "The audio will load.",
+    "Audio for this article will load",
+  ])("treats audio-player line %j as furniture", (text) => {
+    expect(isBoilerplate(text)).toBe(true);
+  });
+
+  // The collision risk: "Listen" and "audio" are ordinary words.
+  it.each([
+    "Listen to what she said next.",
+    "Listen,",
+    "The audio quality was poor throughout the recording.",
+    "He waited 10:07 min for a reply.",
+    "She explained that the audio from the hearing will load onto the court's public website next week.",
+  ])("leaves prose %j alone", (text) => {
+    expect(isBoilerplate(text)).toBe(false);
+  });
 });
 
 describe("stripBoilerplateMarkdown", () => {
