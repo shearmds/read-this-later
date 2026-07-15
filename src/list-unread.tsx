@@ -21,6 +21,7 @@ import {
   groupByFolder,
   ReadLaterItem,
 } from "./api";
+import { Reader } from "./reader";
 
 type Filter = "unread" | "read" | "all";
 
@@ -30,14 +31,14 @@ function matchesFilter(item: ReadLaterItem, filter: Filter): boolean {
   return true;
 }
 
-// Offline state is informational here — Raycast can't capture article bodies
-// (that needs a live logged-in DOM), so it only reports what other clients did.
+// Raycast can read captured bodies but can't create them — capture needs a
+// live logged-in DOM, which only the browser extension and iOS app have.
 function offlineAccessory(item: ReadLaterItem): List.Item.Accessory | null {
   switch (item.offline) {
     case "saved":
       return {
         icon: { source: Icon.Book, tintColor: Color.Green },
-        tooltip: "Available offline",
+        tooltip: "Captured — press ⌘↵ to read here",
       };
     case "requested":
       return {
@@ -172,6 +173,14 @@ export default function Command() {
                 if (!item.read) toggleRead(item, true);
               }}
             />
+            {item.offline === "saved" && (
+              <Action.Push
+                title="Read Article"
+                icon={Icon.Book}
+                shortcut={{ modifiers: ["cmd"], key: "return" }}
+                target={<Reader item={item} />}
+              />
+            )}
             {item.read ? (
               <Action
                 title="Mark as Unread"

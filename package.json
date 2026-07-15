@@ -37,12 +37,15 @@
   ],
   "dependencies": {
     "@raycast/api": "^1.83.0",
-    "@raycast/utils": "^1.17.0"
+    "@raycast/utils": "^1.17.0",
+    "turndown": "^7.2.4",
+    "turndown-plugin-gfm": "^1.0.2"
   },
   "devDependencies": {
     "@raycast/eslint-config": "^1.0.11",
     "@types/node": "^20.0.0",
     "@types/react": "^18.3.3",
+    "@types/turndown": "^5.0.6",
     "eslint": "^8.57.0",
     "prettier": "^3.3.2",
     "typescript": "^5.4.5",
