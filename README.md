@@ -1,16 +1,32 @@
 # Read This Later — Raycast Extension
 
-Browse your **Read Later** unread list and save the current browser tab to it,
-without leaving Raycast. Your list stays in sync with the Read Later apps on
-iOS, macOS, and the browser via a hosted sync service.
+Browse your **Read Later** list, read saved articles, and save the current
+browser tab — without leaving Raycast. Your list stays in sync with the Read
+Later apps on iOS, macOS, and the browser via a hosted sync service.
 
 ## Commands
 
-- **Show Unread Links** — browse your unread saved articles. `↵` opens the
-  article in your browser and marks it read; `⌘R` marks read without opening;
-  `⌘C` copies the URL; `⌘L` reloads the list.
+- **Show Unread Links** — browse your saved articles, grouped into the folders
+  your Read Later account assigns. Filter by Unread, Read, or All from the
+  dropdown. `↵` opens the article in your browser and marks it read; `⌘↵` reads
+  it inside Raycast (or shows its note and details); `⌘R` toggles read; `⌘C`
+  copies the URL; `⌘L` reloads; `⌃X` deletes.
 - **Save Current Tab** — saves the frontmost browser tab to your Read Later
   list. Works in Safari, Chrome, Dia, Arc, Brave, Edge, Vivaldi, and Opera.
+  With the Raycast browser extension connected, it also captures the article
+  text for offline reading.
+
+## Reading articles
+
+Article text is captured at save time from the page as it's open in your
+browser, then end-to-end encrypted before it's stored — the sync service only
+ever holds ciphertext it can't read. Any of your devices can decrypt it with
+your sync token.
+
+Because the capture happens on the live page you're already signed in to, the
+saved copy is the full article even when revisiting the URL later would show a
+subscriber prompt. Links showing a green book icon have a saved copy; press
+`⌘↵` to read it here.
 
 ## Setup
 
@@ -28,6 +44,10 @@ iOS, macOS, and the browser via a hosted sync service.
    make sure it's enabled — when it's off, the save command will tell you to
    reconnect it instead of saving an incomplete URL.
 
+   The browser extension is also what makes article capture possible: it's the
+   only way Raycast can see the page you're reading. Without it the link is
+   still saved, just without the article text.
+
 ## How sync works
 
 The extension talks to a Cloudflare Worker at
@@ -41,15 +61,25 @@ The save command may also fetch the target page's `<title>` / `og:title` over
 HTTPS when the browser reports only a domain as the title, so saved articles
 have readable names.
 
+Article bodies are stored separately from the list, under `/body`, and are
+encrypted client-side with AES-256-GCM using a key derived from your sync token
+via HKDF-SHA256. The format is shared byte-for-byte with the browser extension
+and the iOS app, so a copy captured on one device reads on any other.
+
 ## Local development
 
 ```bash
 npm install
 npm run dev
+npm test
 ```
 
 `npm run dev` opens the extension in Raycast's development mode and hot-reloads
 on save. Build a permanent local copy with `npm run build`.
+
+`npm test` runs the unit tests. These cover the sync write paths (which must
+round-trip fields owned by the other clients — dropping one erases it
+everywhere) and assert the encryption against the shared interop vector.
 
 ## Companion apps
 
